@@ -1,43 +1,53 @@
+/**
+ * StreamAlg - concise demonstration of Java Streams (Java 8)
+ *
+ * Purpose / value of streams:
+ * - Streams express data-processing pipelines (map/filter/reduce) in a declarative style.
+ * - Streams are lazy: intermediate ops are not executed until a terminal operation runs.
+ * - Streams can be infinite (iterate/generate) and safely consumed with limit().
+ * - Primitive streams (IntStream/LongStream/DoubleStream) avoid boxing for numeric ops.
+ * - Streams are single-use: create a new stream each time or use a supplier/collection.
+ *
+ * This file shows three short pipelines, with user-provided sample size:
+ * 1) an infinite IntStream.generate -> boxed() -> sample (random numbers),
+ * 2) Stream.iterate for a sequence (powers of two),
+ * 3) IntStream.rangeClosed with map -> sum (sum of squares up to sample).
+ */
 import java.util.Random;
+import java.util.Scanner;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class StreamAlg {
 
-    // 1. GENERIC METHOD
-    // Takes a Stream<T> of ANY type.
-    public static <T> void printSample(Stream<T> stream, int sampleSize) {
-        System.out.print("Sample: ");
-        stream.limit(sampleSize)
-              .forEach(item -> System.out.print(item + " "));
+    private static <T> void printSample(Stream<T> stream, int sampleSize) {
+        stream.limit(sampleSize).forEach(item -> System.out.print(item + " "));
         System.out.println();
     }
 
     public static void main(String[] args) {
-        System.out.println("--- 1. Infinite Stream Generation ---");
-        
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Enter sample size (1-1000): ");
+        int sampleSize = 0;
+        while (sampleSize < 1) {
+            if (!sc.hasNextInt()) { sc.nextLine(); System.out.print("Enter a number: "); continue; }
+            sampleSize = sc.nextInt(); sc.nextLine();
+            if (sampleSize < 1) System.out.print("Must be >=1: ");
+            if (sampleSize > 1000) { sampleSize = 1000; System.out.println("Capped to 1000."); }
+        }
+
         Random rand = new Random();
-        
-        // Generate an infinite stream of random integers
-        // We use 'boxed()' to convert IntStream to Stream<Integer> for our generic method
-        Stream<Integer> randomNumbers = IntStream.generate(() -> rand.nextInt(100))
-                                                 .boxed();
-                                                 
-        printSample(randomNumbers, 5); // Prints 5 random numbers
 
-        System.out.println("\n--- 2. Stream Iteration (Sequence) ---");
-        // Generate a sequence: 1, 2, 4, 8, 16...
-        // iterate(seed, UnaryOperator)
-        Stream<Integer> powersOfTwo = Stream.iterate(1, n -> n * 2);
-        
-        printSample(powersOfTwo, 6);
+        System.out.println("\n--- 1. Infinite stream (random 0..99) ---");
+        printSample(IntStream.generate(() -> rand.nextInt(100)).boxed(), sampleSize);
 
-        System.out.println("\n--- 3. Primitive Streams Logic ---");
-        // Calculate sum of squares for numbers 1 to 5
-        int sumSquares = IntStream.rangeClosed(1, 5) // 1,2,3,4,5
-                                  .map(n -> n * n)   // 1,4,9,16,25
-                                  .sum();            // 55
-                                  
-        System.out.println("Sum of squares (1-5): " + sumSquares);
+        System.out.println("\n--- 2. Stream.iterate (powers of two) ---");
+        printSample(Stream.iterate(1, n -> n * 2), sampleSize);
+
+        System.out.println("\n--- 3. Primitive stream (sum of squares 1..n) ---");
+        int sumSquares = IntStream.rangeClosed(1, sampleSize).map(n -> n * n).sum();
+        System.out.println("Sum of squares (1.." + sampleSize + "): " + sumSquares);
+
+        sc.close();
     }
 }

@@ -1,73 +1,68 @@
 /**
- * EDUCATIONAL MODULE 2: HIGHER-ORDER FUNCTIONS & INTERACTIVITY
- * * CONCEPTS COVERED:
- * 1. Function Factories (Higher-Order Functions):
- * - A method that returns a Function.
- * - We use this to build a dynamic "Multiplier" based on user input.
- * - Logic: scaleFactor -> (x -> x * scaleFactor)
- * * 2. Custom Functional Interfaces with Complex Logic:
- * - Defining an interface (SafeConverter) to handle multiple logic paths.
- * - Using a lambda block body {} to implement switch-cases dynamically.
- * * 3. Interactive Input:
- * - Using Scanner to drive the functional parameters at runtime.
+ * HigherOrderLogic - compact, educational demo (Java 8)
+ *
+ * Concepts:
+ * - Higher-order function: method that returns a function (createMultiplier).
+ * - Interactivity: Scanner drives parameters at runtime.
+ * - Simple custom functional interface (SafeConverter) used with a lambda.
+ *
+ * Usage:
+ * - Enter a scale to create a multiplier function, then apply it to a value.
+ * - Convert a EUR amount to USD/JPY/GBP using the converter lambda.
  */
-
 import java.util.Scanner;
 import java.util.function.DoubleUnaryOperator;
-import java.util.function.Function;
 
 @FunctionalInterface
-interface SafeConverter {
-    double convert(double value, String mode);
-}
+interface SafeConverter { double convert(double amount, String currency); }
 
 public class HigherOrderLogic {
 
+    // higher-order: returns a function (DoubleUnaryOperator) built from scale
+    static DoubleUnaryOperator createMultiplier(double scale) {
+        return x -> x * scale;
+    }
+
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        
-        // --- PART A: Dynamic Function Factory ---
-        
-        System.out.print("Enter a number to create a multiplier function (e.g., 2 for doubling): ");
-        double userScale = scanner.nextDouble();
+        Scanner sc = new Scanner(System.in);
 
-        Function<Double, DoubleUnaryOperator> scalerFactory = 
-            (scaleFactor) -> (x) -> x * scaleFactor;
+        System.out.print("Multiplier scale (e.g. 2): ");
+        double scale = readDouble(sc);
 
-        DoubleUnaryOperator dynamicMultiplier = scalerFactory.apply(userScale);
+        DoubleUnaryOperator multiplier = createMultiplier(scale);
+        System.out.print("Value to multiply: ");
+        double value = readDouble(sc);
+        System.out.printf("Result: %.4f%n", multiplier.applyAsDouble(value));
 
-        System.out.print("Enter a value to apply your new function to: ");
-        double valueToProcess = scanner.nextDouble();
-
-        double result = dynamicMultiplier.applyAsDouble(valueToProcess);
-        System.out.println("Result: " + result);
-
-
-        // --- PART B: Custom Interface with Logic ---
-        
-        SafeConverter currencyConverter = (amount, currency) -> {
-            switch (currency.toUpperCase()) {
-                case "USD": return amount * 1.1;
-                case "JPY": return amount * 140.0;
-                case "GBP": return amount * 0.85;
-                default: throw new IllegalArgumentException("Unsupported currency: " + currency);
+        // simple converter lambda
+        SafeConverter conv = (amt, cur) -> {
+            switch (cur.toUpperCase()) {
+                case "USD": return amt * 1.10;
+                case "JPY": return amt * 140.0;
+                case "GBP": return amt * 0.85;
+                default: throw new IllegalArgumentException("Unsupported: " + cur);
             }
         };
 
-        System.out.println("\n--- Currency Converter ---");
-        System.out.print("Enter Amount in EUR: ");
-        double amount = scanner.nextDouble();
-        
-        System.out.print("Enter Target Currency (USD, JPY, GBP): ");
-        String curr = scanner.next();
+        System.out.print("Amount in EUR to convert: ");
+        double eur = readDouble(sc);
+        System.out.print("Target currency (USD, JPY, GBP): ");
+        String cur = sc.next().trim();
 
         try {
-            double converted = currencyConverter.convert(amount, curr);
-            System.out.printf("Converted: %.2f %s%n", converted, curr.toUpperCase());
+            double out = conv.convert(eur, cur);
+            System.out.printf("Converted: %.2f %s%n", out, cur.toUpperCase());
         } catch (IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
         }
 
-        scanner.close();
+        sc.close();
+    }
+
+    private static double readDouble(Scanner sc) {
+        while (true) {
+            if (!sc.hasNextDouble()) { sc.next(); System.out.print("Enter a number: "); continue; }
+            return sc.nextDouble();
+        }
     }
 }
